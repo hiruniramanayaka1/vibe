@@ -39,6 +39,13 @@ jobs:
           msystem: MINGW64
           install: wget
 
+      - name: Cache whisper model
+        id: cache-whisper
+        uses: actions/cache@v4
+        with:
+          path: ggml-tiny.bin
+          key: whisper-ggml-tiny-v1
+
       - name: Download latest release artifact (including pre-releases)
         shell: bash
         env:
@@ -52,12 +59,12 @@ jobs:
           gh release download "$tag" --repo ${{ github.repository }} --pattern "${{ matrix.pattern }}"
 
       - name: Download tiny whisper model
-        if: runner.os != 'Windows'
+        if: "runner.os != 'Windows' && steps.cache-whisper.outputs.cache-hit != 'true'"
         shell: bash
         run: wget -q https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin
 
       - name: Download tiny whisper model (Windows)
-        if: runner.os == 'Windows'
+        if: "runner.os == 'Windows' && steps.cache-whisper.outputs.cache-hit != 'true'"
         shell: pwsh
         run: C:\msys64\usr\bin\wget.exe --progress=bar:force:noscroll https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin -O ggml-tiny.bin
 
